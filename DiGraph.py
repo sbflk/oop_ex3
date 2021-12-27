@@ -1,9 +1,10 @@
 import EdgeData
 import NodeData
 from collections import defaultdict
+from src import GraphInterface
 
 
-class DiGraph:
+class DiGraph(GraphInterface.GraphInterface):
 
     def __init__(self):
         self.Nodes = {}
@@ -21,17 +22,20 @@ class DiGraph:
     def get_all_v(self) -> dict:
         return self.Nodes
 
+    def get_all_edges(self) -> list:
+        return self.Edges
+
     def all_in_edges_of_node(self, id1: int) -> dict:
         edges = {}
         for e in self.to_node[id1]:
-            edges[e.get_src] = e.get_weight()
+            edges[e.get_src()] = e.get_weight()
 
         return edges
 
     def all_out_edges_of_node(self, id1: int) -> dict:
         edges = {}
         for e in self.from_node[id1]:
-            edges[e.get_dest] = e.get_weight()
+            edges[e.get_dest()] = e.get_weight()
 
         return edges
 
