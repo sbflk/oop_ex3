@@ -1,3 +1,4 @@
+import collections
 from typing import List
 import sys
 import json
@@ -5,12 +6,14 @@ import DiGraph
 from src import GraphAlgoInterface
 from src import GraphInterface
 from itertools import permutations
+from collections import defaultdict, Counter
 import copy
 
 class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
 
     def __init__(self, g: GraphInterface.GraphInterface = DiGraph.DiGraph()):
         self.g = g
+        self.shortest_path_dict = defaultdict(list)
 
     def get_graph(self) -> GraphInterface:
         return self.g
@@ -85,6 +88,8 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
             unvisited.remove(current_vertex)
             visited.append(current_vertex)
 
+        self.shortest_path_dict[id1].append(id_weight)
+        self.shortest_path_dict[id1].append(id_previous)
         if not id_previous:
             return -1, []
 
@@ -136,7 +141,40 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
             if w < best_path_weight and check:
                 best_path = p
                 best_path_weight = w
-        return best_path, best_path_weight
+
+        if best_path is not None:
+            return best_path, best_path_weight
+
+        unvisited = copy.deepcopy(node_lst)
+        for n in node_lst:
+            unvisited.remove(n)
+            best_path1 = [n]
+            total_weight = 0
+            prev_ver = n
+            size = len(unvisited)
+            for i in range(size):
+                closest_ver = min(unvisited, key=self.shortest_path_dict[prev_ver][0].get)
+                w, p = GraphAlgo.shortest_path(self, prev_ver, closest_ver)
+                total_weight += w
+                best_path1.extend(p[1:])
+                unvisited.remove(closest_ver)
+                prev_ver = closest_ver
+
+            if total_weight < best_path_weight:
+                best_path_weight = total_weight
+                best_path = best_path1
+
+            unvisited = copy.deepcopy(node_lst)
+
+        if collections.Counter(best_path) == collections.Counter(node_lst):
+            return best_path, best_path_weight
+
+        return None, sys.float_info.max
+
+
+
+
+
 
 
     def centerPoint(self) -> (int, float):
