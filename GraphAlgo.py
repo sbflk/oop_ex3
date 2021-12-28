@@ -1,4 +1,5 @@
 import collections
+import math
 from typing import List
 import sys
 import json
@@ -8,6 +9,9 @@ from src import GraphInterface
 from itertools import permutations
 from collections import defaultdict, Counter
 import copy
+import tkinter
+from tkinter import *
+
 
 class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
 
@@ -106,7 +110,6 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
         path = path[::-1]
         return w, path
 
-
     def longest_path(self, id1: int) -> float:
         id_weight = {}
         id_previous = {}
@@ -171,12 +174,6 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
 
         return None, sys.float_info.max
 
-
-
-
-
-
-
     def centerPoint(self) -> (int, float):
         center = None
         weight = sys.float_info.max
@@ -189,5 +186,165 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
         return center, weight
 
     def plot_graph(self) -> None:
+        """
+        Plots the graph.
+        If the nodes have a position, the nodes will be placed there.
+        Otherwise, they will be placed in a random but elegant manner.
+        @return: None
+        """
+        m = tkinter.Tk()
+        m.title("Graph Gui")
+        screen_width = m.winfo_screenwidth()
+        screen_height = m.winfo_screenheight()
+        can = Canvas(m, width=screen_width / 1.5, height=screen_height / 1.5)
+        can.pack()
+        menubar = Menu(m)
+        m.config(menu=menubar)
+        load_menu = Menu(menubar)
+        menubar.add_cascade(label="Load", menu=load_menu)
+        load_menu.add_command(label="load", command=lambda: self.load_f())
 
-        raise NotImplementedError
+        save_menu = Menu(menubar)
+        menubar.add_cascade(label="Save", menu=save_menu)
+        save_menu.add_command(label="save", command=lambda: self.save_f())
+
+        edit_menu = Menu(menubar)
+        menubar.add_cascade(label="Edit", menu=edit_menu)
+
+        run_menu = Menu(menubar)
+        menubar.add_cascade(label="Run", menu=run_menu)
+
+        nodes = self.g.get_all_v()
+        max_x = 0
+        max_y = 0
+        min_x = sys.float_info.max
+        min_y = sys.float_info.max
+        for id, n in nodes.items():
+            x, y = n.getPos()
+            x = float(x)
+            y = float(y)
+            if x < min_x:
+                min_x = x
+            elif x > max_x:
+                max_x = x
+            if y < min_y:
+                min_y = y
+            elif y > max_y:
+                max_y = y
+
+        min_x -= 0.000625
+        min_y -= 0.000625
+        max_x += 0.000625
+        max_y += 0.000625
+        cnt = 0
+        for id, n in nodes.items():
+            x, y = n.getPos()
+            x = float(x)
+            y = float(y)
+            x = (x-min_x)/(max_x-min_x)
+            y = (y - min_y) / (max_y - min_y)
+            final_x = int(x*(screen_width/1.5))
+            final_y = int(y * (screen_height / 1.5))
+            GraphAlgo.create_circle(self, can, final_x, final_y, id)
+
+        for id, n in nodes.items():
+            x, y = n.getPos()
+            x = float(x)
+            y = float(y)
+            x = (x - min_x) / (max_x - min_x)
+            y = (y - min_y) / (max_y - min_y)
+            final_x = int(x * (screen_width / 1.5))
+            final_y = int(y * (screen_height / 1.5))
+            edges_from_node = self.g.all_out_edges_of_node(id)
+            for e in edges_from_node:
+                dest_x, dest_y = nodes[e].getPos()
+                dest_x = float(dest_x)
+                dest_y = float(dest_y)
+                dest_x = (dest_x - min_x) / (max_x - min_x)
+                dest_y = (dest_y - min_y) / (max_y - min_y)
+                final_dest_x = int(dest_x * (screen_width/1.5))
+                final_dest_y = int(dest_y * (screen_height / 1.5))
+                GraphAlgo.draw_arrow(self, final_x, final_y, final_dest_x, final_dest_y, 6, 5, can)
+
+        m.mainloop()
+
+    def draw_arrow(self, x1, y1, x2, y2, d, h, canvas):
+        dx = x2 - x1
+        dy = y2 - y1
+        D = math.sqrt(dx * dx + dy * dy)
+        xm = D - d
+        xn = xm
+        ym = h
+        yn = -h
+        sin = dy / D
+        cos = dx / D
+        x = xm * cos - ym * sin + x1
+        ym = xm * sin + ym * cos + y1
+        xm = x
+        x = xn * cos - yn * sin + x1
+        yn = xn * sin + yn * cos + y1
+        xn = x
+        points = [x2, y2, int(xm), int(ym), int(xn), int(yn)]
+        canvas.create_line(x1, y1, x2, y2)
+        canvas.create_polygon(points, fill="black")
+
+    def create_circle(self, canvas, x, y, id_node):
+        x0 = x - 10
+        y0 = y - 10
+        x1 = x + 10
+        y1 = y + 10
+        canvas.create_text(x0-5, y0-5, text=str(id_node))
+        return canvas.create_oval(x0, y0, x1, y1, fill="red")
+
+    # a function that gets the input un the entry, cleans it, and try to save the graph to the input given,
+    # and calls for a window to give response if it succeded or not
+    def try_save(self, e) -> None:
+        new_e = e.get()
+        e.delete(0, 'end')
+        flag = self.save_to_json(new_e)
+        if not flag:
+            self.create_window("the entry you gave was inadequate, please try again")
+        else:
+            self.create_window("the file was saved!")
+
+    # create a window to which we put the input of the file we want to save the graph to
+    def save_f(self) -> None:
+        w = Tk()
+        screen_width = w.winfo_screenwidth()
+        screen_height = w.winfo_screenheight()
+        can = Canvas(w, width=screen_width / 3, height=screen_height / 3)
+        can.pack()
+        e = Entry(w)
+        e.pack()
+        b = Button(w, text="enter the name of the file you want to save to:", command=lambda: self.try_save(e))
+        b.pack()
+
+    def load_f(self) -> None:
+        w = Tk()
+        screen_width = w.winfo_screenwidth()
+        screen_height = w.winfo_screenheight()
+        can = Canvas(w, width=screen_width / 3, height=screen_height / 3)
+        can.pack()
+        e = Entry(w)
+        e.pack()
+        b = Button(w, text="enter the path/name of the file you want to load:", command=lambda: self.try_load(e))
+        b.pack()
+
+    def try_load(self, e) -> None:
+        new_e = e.get()
+        e.delete(0, 'end')
+        flag = self.load_from_json(new_e)
+        if not flag:
+            self.create_window("the entry you gave was inadequate, please try again")
+        else:
+            self.create_window("the file was loaded to the graph!")
+
+    def create_window(self, st) -> None:
+        w = Tk()
+        screen_width = w.winfo_screenwidth()
+        screen_height = w.winfo_screenheight()
+        can = Canvas(w, width=screen_width / 3, height=screen_height / 3)
+        can.pack()
+        l1 = Label(w, text=st)
+        l1.pack()
+
