@@ -58,7 +58,7 @@ class DiGraph(GraphInterface.GraphInterface):
         return True
 
     def add_node(self, node_id: int, pos: tuple = None) -> bool:
-        n = NodeData.NodeData(node_id,pos)
+        n = NodeData.NodeData(node_id, pos)
         if node_id not in self.Nodes.keys():
             self.Nodes[node_id] = n
             self.mc += 1

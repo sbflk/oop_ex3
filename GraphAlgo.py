@@ -12,7 +12,6 @@ import copy
 import tkinter
 from tkinter import *
 
-
 class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
 
     def __init__(self, g: GraphInterface.GraphInterface = DiGraph.DiGraph()):
@@ -202,7 +201,7 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
         m.config(menu=menubar)
         load_menu = Menu(menubar)
         menubar.add_cascade(label="Load", menu=load_menu)
-        load_menu.add_command(label="load", command=lambda: self.load_f())
+        load_menu.add_command(label="load", command=lambda: self.load_f(can, screen_width / 1.5, screen_height / 1.5))
 
         save_menu = Menu(menubar)
         menubar.add_cascade(label="Save", menu=save_menu)
@@ -214,6 +213,10 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
         run_menu = Menu(menubar)
         menubar.add_cascade(label="Run", menu=run_menu)
 
+        GraphAlgo.plot_Graph(self, can, screen_width / 1.5, screen_height / 1.5)
+        m.mainloop()
+
+    def plot_Graph(self, can, screen_width, screen_height):
         nodes = self.g.get_all_v()
         max_x = 0
         max_y = 0
@@ -241,10 +244,10 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
             x, y = n.getPos()
             x = float(x)
             y = float(y)
-            x = (x-min_x)/(max_x-min_x)
+            x = (x - min_x) / (max_x - min_x)
             y = (y - min_y) / (max_y - min_y)
-            final_x = int(x*(screen_width/1.5))
-            final_y = int(y * (screen_height / 1.5))
+            final_x = int(x * screen_width)
+            final_y = int(y * screen_height)
             GraphAlgo.create_circle(self, can, final_x, final_y, id)
 
         for id, n in nodes.items():
@@ -253,8 +256,8 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
             y = float(y)
             x = (x - min_x) / (max_x - min_x)
             y = (y - min_y) / (max_y - min_y)
-            final_x = int(x * (screen_width / 1.5))
-            final_y = int(y * (screen_height / 1.5))
+            final_x = int(x * screen_width)
+            final_y = int(y * screen_height)
             edges_from_node = self.g.all_out_edges_of_node(id)
             for e in edges_from_node:
                 dest_x, dest_y = nodes[e].getPos()
@@ -262,11 +265,9 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
                 dest_y = float(dest_y)
                 dest_x = (dest_x - min_x) / (max_x - min_x)
                 dest_y = (dest_y - min_y) / (max_y - min_y)
-                final_dest_x = int(dest_x * (screen_width/1.5))
-                final_dest_y = int(dest_y * (screen_height / 1.5))
+                final_dest_x = int(dest_x * screen_width)
+                final_dest_y = int(dest_y * screen_height)
                 GraphAlgo.draw_arrow(self, final_x, final_y, final_dest_x, final_dest_y, 6, 5, can)
-
-        m.mainloop()
 
     def draw_arrow(self, x1, y1, x2, y2, d, h, canvas):
         dx = x2 - x1
@@ -319,7 +320,7 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
         b = Button(w, text="enter the name of the file you want to save to:", command=lambda: self.try_save(e))
         b.pack()
 
-    def load_f(self) -> None:
+    def load_f(self, canvas, screen_width, screen_height) -> None:
         w = Tk()
         screen_width = w.winfo_screenwidth()
         screen_height = w.winfo_screenheight()
@@ -327,10 +328,10 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
         can.pack()
         e = Entry(w)
         e.pack()
-        b = Button(w, text="enter the path/name of the file you want to load:", command=lambda: self.try_load(e))
+        b = Button(w, text="enter the path/name of the file you want to load:", command=lambda: self.try_load(e, canvas, screen_width, screen_height))
         b.pack()
 
-    def try_load(self, e) -> None:
+    def try_load(self, e, can, screen_width, screen_height) -> None:
         new_e = e.get()
         e.delete(0, 'end')
         flag = self.load_from_json(new_e)
@@ -338,6 +339,8 @@ class GraphAlgo(GraphAlgoInterface.GraphAlgoInterface):
             self.create_window("the entry you gave was inadequate, please try again")
         else:
             self.create_window("the file was loaded to the graph!")
+            can.delete('all')
+            GraphAlgo.plot_Graph(self, can, screen_width / 1.5, screen_height / 1.5)
 
     def create_window(self, st) -> None:
         w = Tk()
